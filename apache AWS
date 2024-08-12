@@ -1,0 +1,30 @@
+---
+- name: Install Apache and configure a virtual host
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install Apache
+      apt:
+        name: apache2
+        state: present
+
+    - name: Create a virtual host configuration file
+      template:
+        src: vhost.conf.j2
+        dest: /etc/apache2/sites-available/000-default.conf
+
+    - name: Enable the virtual host configuration file
+      apache2_config:
+        src: /etc/apache2/sites-available/000-default.conf
+        state: enabled
+
+    - name: Ensure Apache starts at boot
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Ensure Apache is always running
+      service:
+        name: apache2
+        state: running
