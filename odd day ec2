@@ -1,0 +1,38 @@
+import boto3
+import datetime
+import sys
+
+# Function to reboot EC2 instance
+def reboot_instance(instance_id):
+    ec2 = boto3.client('ec2')
+    response = ec2.reboot_instances(InstanceIds=[instance_id])
+    return response['RebootInstancesResult']['Rebooting']
+
+# Function to publish message to SNS topic
+def publish_message(topic_arn, message):
+    sns = boto3.client('sns')
+    response = sns.publish(TopicArn=topic_arn, Message=message)
+    return response['ResponseMetadata']['HTTPStatusCode']
+
+# Main script
+if __name__ == "__main__":
+    instance_id = sys.argv[1]  # EC2 Instance ID passed as an argument
+    topic_arn = sys.argv[2]    # SNS Topic ARN passed as an argument
+
+    # Check if today's day is odd
+    if datetime.datetime.now().day % 2 != 0:
+        print("Today is not an odd day. No action taken.")
+        sys.exit(0)
+
+    # Attempt to reboot the instance
+    reboot_success = reboot_instance(instance_id)
+
+    # Publish a message based on the reboot result
+    if reboot_success:
+        message = f"Reboot of instance {instance_id} was successful."
+        publish_message(topic_arn, message)
+        print(message)
+    else:
+        message = f"Failed to reboot instance {instance_id}."
+        publish_message(topic_arn, message)
+        print(message)
